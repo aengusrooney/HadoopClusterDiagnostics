@@ -1,0 +1,52 @@
+# in case of a namenode hang...  
+
+A.) On Active NameNode: 
+
+1. Collect CPU usage details of the Active NameNode process: 
+# ps -eo pid,user,pcpu,command --sort=-pcpu 
+
+2. Identifying the suspect threads (Collect the number of threads): 
+# ps -L <pid_of_NN> | wc -l 
+# ps -T <pid_of_NN> | wc -l 
+
+3. Collect the GC logs. This is important to see if the CPU usage is due to excessive GC. 
+
+4. High CPU usage of JAVA threads is not good, collect data from OS from the time of this issue, using top: 
+# top -b -n 1 -H -p <pid_of_NN> 
+
+5. Collect the “stack and thread dump”, using following command (repeat this command for 6 to 8 times): 
+# $JAVA_HOME/bin/jstack -l <pid_of_NN> >>/tmp/high-cpu-tdump.out 
+# $JAVA_HOME/bin/jcmd <pid_of_NN> Thread.print >>/tmp/jcmd_threaddump.out 
+
+6. Collect the “namenode.out” file. 
+
+7. Collect the “Hadoop configuration files” 
+# /etc/hadoop/conf/* 
+
+
+B.) On StandBy NameNode: 
+
+8. Collect CPU usage details of the StandBy NameNode process: 
+# ps -eo pid,user,pcpu,command --sort=-pcpu 
+
+9. Identifying the suspect threads (Collect the number of threads): 
+# ps -L <pid_of_SNN> | wc -l 
+# ps -T <pid_of_SNN> | wc -l 
+
+10. Collect the GC logs from StandBy NameNode. This is important to see if the CPU usage is due to excessive GC. 
+
+11. High CPU usage of JAVA threads is not good, collect data from OS from the time of this issue, using top: 
+# top -b -n 1 -H -p <pid_of_SNN> 
+
+12. Collect the “stack and thread dump”, using following command (repeat this command for 6 to 8 times): 
+# $JAVA_HOME/bin/jstack -l <pid_of_SNN> >>/tmp/high-cpu-tdump.out 
+# $JAVA_HOME/bin/jcmd <pid_of_SNN> Thread.print >>/tmp/jcmd_threaddump.out 
+
+13. Collect the “namenode.out” file. 
+
+14. Collect the “Hadoop configuration files” 
+# /etc/hadoop/conf/* 
+
+C.) Collect Zookeeper Logs (from all the three nodes). 
+
+D.) Collect JournalNode Logs (from all the three nodes). 
