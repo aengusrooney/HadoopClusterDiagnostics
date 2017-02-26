@@ -1,5 +1,7 @@
 #!/bin/env bash
 
+#  Run the shell script syschkhive.sh for "HiveServer2","HiveMetastore", and "hive" PID's 
+
 function syschk() {
     local __doc__="Execute OS command to check system for triage"
     local _p="$1"       # Java PID ex: `cat /var/run/hive/hive.pid` or `cat /var/run/hive/hive-server.pid`
