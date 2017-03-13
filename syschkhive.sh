@@ -1,7 +1,5 @@
 #!/bin/env bash
 
-#  Run the shell script syschkhive.sh for "HiveServer2","HiveMetastore", and "hive" PID's 
-
 function syschk() {
     local __doc__="Execute OS command to check system for triage"
     local _p="$1"       # Java PID ex: `cat /var/run/hive/hive.pid` or `cat /var/run/hive/hive-server.pid`
@@ -17,6 +15,7 @@ function syschk() {
             local _u="`stat -c '%U' /proc/${_p}`"
             for i in {1..3};do su ${_u} -c "jstack -l ${_p}"; sleep 5; done &> ${_work_dir%/}/jstack_${_p}.out &
             su ${_u} -c "jstat -gccause ${_p} 1000 5" &> ${_work_dir%/}/jstat_${_p}.out &
+            su ${_u} -c "jmap -dump:live,format=b,file=${_work_dir%/}/jmap_live_dump_${_p}.out  ${_p}"
             su ${_u} -c "jmap -histo ${_p}" &> ${_work_dir%/}/jmap_histo_${_p}.out &
         
         ps -eLo user,pid,lwp,nlwp,ruser,pcpu,stime,etime,args | grep -w "${_p}" &> ${_work_dir%/}/pseLo_${_p}.out
