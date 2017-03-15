@@ -1,5 +1,33 @@
 #!/bin/env bash
 
+# A. Run the shell script hive_template.sh each time for "HiveServer2","HiveMetastore", and "hive" PID's.
+# 
+# B. Gather following details:
+#
+# 1. Collect the following logs:
+#
+# ·   HiveServer2 Logs.
+# ·   HiveMetaStore Logs. 
+# ·   Zookeeper Logs (from all the Zookeeper nodes).
+#     
+# 2.  Collect the "Hadoop configuration files" and "Hive configuration files":
+#
+# ·   /etc/hadoop/conf/*
+# ·   /etc/hive/conf.server/* 
+# 
+# 3. Provide output of following:
+#
+# ·   From "hive cli"
+#       hive -e 'set -v'   
+# ·   From beeline 
+#       set -v 
+#           
+# C. Provide the following details about the "hive" queries:
+#
+# ·   'explain' plan on the query
+# ·   An isolated query, ideally a narrowed-down smaller query that shows the problem.
+# ·   'describe formatted' on all tables in the query, if they are views, get describe formatted on the source tables of the views.
+
 function syschk() {
     local __doc__="Execute OS command to check system for triage"
     local _p="$1"       # Java PID ex: `cat /var/run/hive/hive.pid` or `cat /var/run/hive/hive-server.pid`
