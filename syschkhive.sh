@@ -4,10 +4,12 @@ function syschk() {
     local __doc__="Execute OS command to check system for triage"
     local _p="$1"       # Java PID ex: `cat /var/run/hive/hive.pid` or `cat /var/run/hive/hive-server.pid`
     local _work_dir="$2"
-    [ -z "${_work_dir}" ] && _work_dir="/tmp/${FUNCNAME}_tmp_dir"
+    [ -z "${_work_dir}" ] && _work_dir="/hadoop/${FUNCNAME}_tmp_dir"
     if [ ! -d "$_work_dir" ] && ! mkdir $_work_dir; then
         echo "ERROR: Couldn't create $_work_dir directory"; return 1
     fi
+    
+    chmod 777 $_work_dir
 
     if [ -n "$_p" ]; then
         echo "Collecting java PID $_p related information..."
@@ -15,8 +17,7 @@ function syschk() {
             local _u="`stat -c '%U' /proc/${_p}`"
             for i in {1..3};do su ${_u} -c "jstack -l ${_p}"; sleep 5; done &> ${_work_dir%/}/jstack_${_p}.out &
             su ${_u} -c "jstat -gccause ${_p} 1000 5" &> ${_work_dir%/}/jstat_${_p}.out &
-            su ${_u} -c "jmap -dump:live,format=b,file=${_work_dir%/}/jmap_live_dump_${_p}.out  ${_p}"
-            su ${_u} -c "jmap -histo ${_p}" &> ${_work_dir%/}/jmap_histo_${_p}.out &
+            su ${_u} -c "jmap -histo:live ${_p}" &> ${_work_dir%/}/jmap_histo_live_${_p}.out &
         
         ps -eLo user,pid,lwp,nlwp,ruser,pcpu,stime,etime,args | grep -w "${_p}" &> ${_work_dir%/}/pseLo_${_p}.out
         lsof -P -p ${_p}  &> ${_work_dir%/}/lsof_${_p}.out
@@ -25,6 +26,7 @@ function syschk() {
         cat /proc/${_p}/io &> ${_work_dir%/}/proc_io_${_p}.out;sleep 5;cat /proc/${_p}/io >> ${_work_dir%/}/proc_io_${_p}.out
         cat /proc/${_p}/environ | tr '\0' '\n' > ${_work_dir%/}/proc_environ_${_p}.out
         pmap -x ${_p} &> ${_work_dir%/}/pmap_${_p}.out
+        jstat -gc ${_p} |tail -n 1| awk '{split($0,a," "); sum=a[3]+a[4]+a[6]+a[8]; print sum}' > ${_work_dir%/}/heap_usedby_${_p}.out
     fi
 
     echo "Collecting OS related information..."
@@ -40,6 +42,8 @@ function syschk() {
     nscd -g &> ${_work_dir%/}/nscd.out
     ntpq -p &> ${_work_dir%/}/ntp.out
     ps -fL  &> ${_work_dir%/}/threadcount.out
+    set -x
+    su ${_u} -c "jmap -dump:live,format=b,file=${_work_dir%/}/jmap_live_dump_${_p}.out ${_p}"
     wait
     echo "Creating tar.gz file..."
     local _file_path="./chksys_$(hostname)_$(date +"%Y%m%d%H%M%S").tar.gz"
