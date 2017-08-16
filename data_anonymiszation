@@ -1,0 +1,86 @@
+{
+"rules":[
+    {
+      "name": "IP",
+      "rule_id": "Pattern",
+      "patterns": ["(?<![a-z0-9\\.])[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}(?![a-z0-9\\.\\-])(?!\\.[0-9])"],
+      "exclude_files": ["hdp-select*.*", "*version.txt"]
+    },
+    {
+      "name": "DOMAIN_NAME",
+      "rule_id": "Domain"
+    },
+    {
+      "name": "SSN",
+      "rule_id": "Pattern",
+      "patterns": ["(?<![0-9x])([0-9x]{3}-[0-9x]{2}-[0-9]{4})(?![0-9x])"],
+      "include_files": ["*.log*", "*.out*"],
+      "exclude_files" : ["hst.log*", "hst.out*"],
+      "shared": false
+    },
+    {
+      "name": "CCN",
+      "rule_id": "Pattern",
+      "patterns": ["(?<![0-9x])(18|21|3[04678]|4[0-9x]|5[1-5]|60|65)[0-9x]{2}[- ]([0-9x]{4}[- ]){2}[0-9]{0,4}(?![0-9x])"],
+      "extract": "(?<![0-9x])([0-9x -]+)(?![0-9x])",
+      "include_files": ["*.log*", "*.out*"],
+      "exclude_files" : ["hst.log.*", "hst.out"],
+      "shared": false
+    },
+    {
+      "name": "EMAIL",
+      "rule_id": "Pattern",
+      "patterns": ["(?<![a-z0-9._%+-])[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,6}(?![a-z0-9._%+-])$?"],
+      "shared": false
+    },
+    {
+      "name": "CORE_SITE_S3A",
+      "rule_id": "Property",
+      "properties": ["fs.s3a.session.token","fs.s3a.proxy.host","fs.s3a.proxy.username","fs.s3a.proxy.password"],
+      "include_files": ["core-site.xml"],
+      "action" : "REPLACE",
+      "replace_value": "Hidden"
+    },
+    {
+      "name": "PASSWORDS",
+      "rule_id": "Property",
+      "properties": [".*password.*", ".*awsAccessKeyId.*",  ".*awsSecretAccessKey.*", ".*awsAccessKeyId.*", "fs.azure.account.key.*", "ranger.service.https.attrib.keystore.pass"],
+      "include_files": ["*.xml", "*.properties", "*.yaml", "*.ini"],
+      "exclude_files" : ["capacity-scheduler.xml"],
+      "action" : "REPLACE",
+      "replace_value": "Hidden"
+    },
+    {
+      "name": "KNOX LDAP Password",
+      "rule_id": "Property",
+      "properties": ["main.ldapRealm.contextFactory.systemPassword"],
+      "include_files": ["topologies/*.xml"],
+      "action" : "REPLACE",
+      "parentNode": "param",
+      "replace_value": "Hidden"
+    },
+    {
+      "name": "KEYSTORE_PASSWORD_LOGGED",
+      "rule_id": "Pattern",
+      "patterns": ["oozie.https.keystore.pass=([^\\s]*)", "OOZIE_HTTPS_KEYSTORE_PASS=([^\\s]*)", "ganglia_password=([^\\s]*)", "javax.jdo.option.ConnectionPassword=([^\\s]*)"],
+      "extract": "=([^\\s]*)",
+      "include_files": ["java_process.txt", "pid.txt", "ambari-agent.log", "java_process.txt", "oozie-env.cmd", "hive_set_v.txt", "beeline_set_v.txt"],
+      "shared": false
+    },
+    {
+      "name": "KEYSTORE_CONFIG",
+      "rule_id": "Property",
+      "properties": ["https.attrib.keystorePass", "HTTPS_KEYSTORE_PASS"],
+      "include_files": ["ranger_webserver.properties"],
+      "action" : "REPLACE"
+    },
+    {
+      "name": "KMS_KEYSTORE_PASSWORD",
+      "rule_id": "Pattern",
+      "patterns": ["KMS_SSL_KEYSTORE_PASS=([^\\s]*)"],
+      "extract": "=([^\\s]*)",
+      "include_files": ["kms-env.sh"],
+      "shared": false
+    }
+]
+}
