@@ -1,0 +1,77 @@
+Example database and metastore replication  
+Source: hdfs://my.cluster.1:8020 
+Target: hdfs://my.cluster.2:8020 
+
+1) Backup the current mysql hive database
+($password is root mysql password and $hive_database_name is hive database name (hive by default))
+mysqldump -u root -p $password $hive_database_name > hivedb.sql 
+
+2) Copy hivedb.sql from my.cluster.1 to my.cluster.2  
+Any secure transfer protocol can be used  
+
+3) Restore the copy to my.cluster.2
+mysql -u root -p $password $hive_database_name < hivedb.sql 
+
+4) Check FSRoot (location of the current file system root) in the SDS table by running:
+metatool -listFSRoot
+[user@hostname bin]$ ./metatool -listFSRoot
+WARNING: Use "yarn jar" to launch YARN applications.
+Initializing HiveMetaTool..
+16/02/18 17:37:25 WARN conf.HiveConf: HiveConf of name hive.server2.enable.impersonation does not exist
+16/02/18 17:37:26 INFO metastore.ObjectStore: ObjectStore, initialize called
+16/02/18 17:37:26 INFO DataNucleus.Persistence: Property datanucleus.cache.level2 unknown - will be ignored
+16/02/18 17:37:26 INFO DataNucleus.Persistence: Property hive.metastore.integral.jdo.pushdown unknown - will be ignored
+16/02/18 17:37:30 WARN conf.HiveConf: HiveConf of name hive.server2.enable.impersonation does not exist
+16/02/18 17:37:30 INFO metastore.ObjectStore: Setting MetaStore object pin classes with hive.metastore.cache.pinobjtypes="Table,Database,Type,FieldSchema,Order"
+16/02/18 17:37:30 WARN metastore.MetaStoreDirectSql: DB Product name[MySQL] obtained, but not used to determine db type. Falling back to using SQL to determine which db we're using
+16/02/18 17:37:34 INFO DataNucleus.Datastore: The class "org.apache.hadoop.hive.metastore.model.MFieldSchema" is tagged as "embedded-only" so does not have its own datastore table.
+16/02/18 17:37:34 INFO DataNucleus.Datastore: The class "org.apache.hadoop.hive.metastore.model.MOrder" is tagged as "embedded-only" so does not have its own datastore table.
+16/02/18 17:37:34 INFO DataNucleus.Datastore: The class "org.apache.hadoop.hive.metastore.model.MFieldSchema" is tagged as "embedded-only" so does not have its own datastore table.
+16/02/18 17:37:34 INFO DataNucleus.Datastore: The class "org.apache.hadoop.hive.metastore.model.MOrder" is tagged as "embedded-only" so does not have its own datastore table.
+16/02/18 17:37:34 INFO DataNucleus.Query: Reading in results for query "org.datanucleus.store.rdbms.query.SQLQuery@0" since the connection used is closing
+16/02/18 17:37:34 INFO metastore.MetaStoreDirectSql: Using direct SQL, underlying DB is MYSQL
+16/02/18 17:37:34 INFO metastore.ObjectStore: Initialized ObjectStore
+Listing FS Roots..
+hdfs://hostname1:8020/apps/hive/warehouse 
+
+5) Run metatool to update the hdfs locations from hdfs://my.cluster.1 to hdfs://my.cluster.2
+(usage metatool -updateLocation new_location old_location)
+/usr/hdp/current/hive-metastore/bin/metatool -updateLocation hdfs://my.cluster.2 hdfs://my.cluster.1
+Sample output: 
+[user@hostname1 bin]$ ./metatool -updateLocation hdfs://hostname2:8020 hdfs://hostname1:8020
+WARNING: Use "yarn jar" to launch YARN applications.
+Initializing HiveMetaTool..
+16/02/18 17:38:33 WARN conf.HiveConf: HiveConf of name hive.server2.enable.impersonation does not exist
+16/02/18 17:38:34 INFO metastore.ObjectStore: ObjectStore, initialize called
+16/02/18 17:38:34 INFO DataNucleus.Persistence: Property datanucleus.cache.level2 unknown - will be ignored
+16/02/18 17:38:34 INFO DataNucleus.Persistence: Property hive.metastore.integral.jdo.pushdown unknown - will be ignored
+16/02/18 17:38:38 WARN conf.HiveConf: HiveConf of name hive.server2.enable.impersonation does not exist
+16/02/18 17:38:38 INFO metastore.ObjectStore: Setting MetaStore object pin classes with hive.metastore.cache.pinobjtypes="Table,Database,Type,FieldSchema,Order"
+16/02/18 17:38:38 WARN metastore.MetaStoreDirectSql: DB Product name[MySQL] obtained, but not used to determine db type. Falling back to using SQL to determine which db we're using
+16/02/18 17:38:41 INFO DataNucleus.Datastore: The class "org.apache.hadoop.hive.metastore.model.MFieldSchema" is tagged as "embedded-only" so does not have its own datastore table.
+16/02/18 17:38:41 INFO DataNucleus.Datastore: The class "org.apache.hadoop.hive.metastore.model.MOrder" is tagged as "embedded-only" so does not have its own datastore table.
+16/02/18 17:38:41 INFO DataNucleus.Datastore: The class "org.apache.hadoop.hive.metastore.model.MFieldSchema" is tagged as "embedded-only" so does not have its own datastore table.
+16/02/18 17:38:41 INFO DataNucleus.Datastore: The class "org.apache.hadoop.hive.metastore.model.MOrder" is tagged as "embedded-only" so does not have its own datastore table.
+16/02/18 17:38:41 INFO DataNucleus.Query: Reading in results for query "org.datanucleus.store.rdbms.query.SQLQuery@0" since the connection used is closing
+16/02/18 17:38:41 INFO metastore.MetaStoreDirectSql: Using direct SQL, underlying DB is MYSQL
+16/02/18 17:38:41 INFO metastore.ObjectStore: Initialized ObjectStore
+Looking for LOCATION_URI field in DBS table to update..
+Successfully updated the following locations..
+old location: hdfs://hostname1:8020/apps/hive/warehouse new location: hdfs://hostname2:8020/apps/hive/warehouse
+Updated 1 records in DBS table
+Looking for LOCATION field in SDS table to update..
+Successfully updated the following locations..
+old location: hdfs://hostname1:8020/apps/hive/warehouse/batting new location: hdfs://hostname2:8020/apps/hive/warehouse/batting
+old location: hdfs://hostname1:8020/apps/hive/warehouse/batting2 new location: hdfs://hostname2:8020/apps/hive/warehouse/batting2
+Updated 2 records in SDS table
+
+6) Metadata will now reflect HDFS in my.cluster.2  
+As the HDFS files are already copied over, now the schemas will be in sync. 
+
+7) Using MySQL replications:  
+
+* Enable MySQL replication between the 2 sites:
+http://dev.mysql.com/doc/refman/5.7/en/replication.html
+
+* Then use the hive metatool to update the locations from hdfs://CLUSTERA to hdfs://CLUSTERB
+https://cwiki.apache.org/confluence/display/Hive/Hive+MetaTool 
